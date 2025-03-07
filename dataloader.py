@@ -1,9 +1,15 @@
 import pandas as pd
-data_path = 'data/'
+import numpy as np
 
-def load_data(k):
-    X_train = pd.read_csv(data_path + f'Xtr{k}.csv')
-    X_test = pd.read_csv(data_path + f'Xte{k}.csv')
-    y_train = pd.read_csv(data_path + f'Ytr{k}.csv')
-    return X_train, y_train, X_test
-
+def load_data(k, type='train'):
+    file_Y = open(f'data/Ytr{k}.csv', 'rb')
+    
+    if type == 'train':
+        X_numpy = np.genfromtxt(f'data/Xtr{k}_mat100.csv', delimiter=' ')
+        Y_pd = pd.read_csv(file_Y)
+        Y_numpy = Y_pd['Bound'].to_numpy().ravel()
+        Y_numpy[Y_numpy == 0] = -1
+        return X_numpy, Y_numpy
+    else:
+        X_numpy = np.genfromtxt(f'data/Xte{k}_mat100.csv', delimiter=' ')
+        return X_numpy

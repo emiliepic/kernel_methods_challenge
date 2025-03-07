@@ -1,1 +1,6 @@
 /data
+/results
+alpha.csv
+params.json
+__pycache__
+.DS_store
