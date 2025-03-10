@@ -1,11 +1,13 @@
 import numpy as np
-from kernels import RBF, Linear
+from kernels import RBF, Linear, Polynomial, Sigmoid
 from svc import KernelSVC
+from krr import KernelRidgeRegression, WeightedKernelRidgeRegression
+from log_reg import KernelLogisticRegression
 from losses import f1_score_m1_1
 import time
 
 
-def k_fold_cross_validation(X, y, model_class, param_grid, k=5, using_julia=False):
+def k_fold_cross_validation(X, y, kernel_type, model_class, param_grid, k=5, using_julia=False):
     """
     Effectue une validation croisée K-Fold pour déterminer les meilleurs paramètres pour un modèle.
     
@@ -32,15 +34,33 @@ def k_fold_cross_validation(X, y, model_class, param_grid, k=5, using_julia=Fals
         
         return folds
     
-    def evaluate_model(X_train, y_train, X_test, y_test, model_class, params, using_julia=False):
+    def evaluate_model(X_train, y_train, X_test, y_test, kernel_type, model_class, params, using_julia=False):
         """ Fonction pour entraîner un modèle et évaluer sa performance """
-        if model_class == "gaussian":
+        if kernel_type == "gaussian":
             kernel = RBF(sigma=params['sigma']).kernel
-        elif model_class == "linear":
+        elif kernel_type == "linear":
             kernel = Linear().kernel
+        elif kernel_type == "Poly":
+            kernel = Polynomial(degree=params['degree'], r=params['r']).kernel
+        elif kernel_type == "Sigmoid":
+            kernel = Sigmoid(sigma=params['sigma'], r=params['r']).kernel
+        else:
+            raise ValueError("Invalid kernel type")
+        
+        if model_class == "svc":
+            model = KernelSVC(C=params['C'], kernel=kernel, epsilon=1e-14)
+        elif model_class == "krr":
+            model = KernelRidgeRegression(lambd=params['lambd'], kernel=kernel, epsilon=1e-14)
+        elif model_class == "wkrr":
+            n = len(y_train)
+            W_matrix = np.diag([params['W'] for _ in range(n)])
+            model = WeightedKernelRidgeRegression(lambd=params['lambd'], kernel=kernel, W=W_matrix, epsilon=1e-14)
+        elif model_class == "log_reg":
+            model = KernelLogisticRegression(kernel=kernel, lambd=params['lambd'])
+
         else:
             raise ValueError("Invalid model class")
-        model = KernelSVC(C=params['C'], kernel=kernel, epsilon=1e-14)
+        
         if using_julia:
             model.fit_julia(X_train, y_train)
         else:
@@ -63,7 +83,7 @@ def k_fold_cross_validation(X, y, model_class, param_grid, k=5, using_julia=Fals
             X_train, X_test = X[train_indices], X[test_indices]
             y_train, y_test = y[train_indices], y[test_indices]
             start_time = time.time()
-            score = evaluate_model(X_train, y_train, X_test, y_test, model_class, params, using_julia=using_julia)
+            score = evaluate_model(X_train, y_train, X_test, y_test, kernel_type, model_class, params, using_julia=using_julia)
             print(f"Time for one fold: {time.time() - start_time}")
             scores.append(score)
         print(f"Time for one set of params: {time.time() - start_time_params}")
