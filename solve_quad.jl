@@ -8,8 +8,7 @@ using JSON
 # Définir les données
 name_json = ARGS[1]
 alpha_path = ARGS[2]
-# name_json = "params.json"
-# alpha_path = "alpha.csv"
+
 json_file = open(name_json)
 data = JSON.parse(json_file)
 close(json_file)
@@ -18,15 +17,9 @@ C = data["C"]
 y = data["y"]
 K = data["K"]
 
-# K = Matrix{Float}(K)
-# println("n: ", n)
-# println("C: ", C)
-# println("y shape: ", size(y))
-# println("K shape: ", size(K[1]))
 
 # Créer un modèle d'optimisation quadratique
 model = Model(Ipopt.Optimizer)
-# model = Model(Ipopt.Optimizer)
 
 # Définir les variables alpha
 @variable(model, alpha[1:n] >= 0)
@@ -46,8 +39,5 @@ optimize!(model)
 # Extraire la solution
 alpha_opt = value.(alpha)
 
-# println("Solution optimale pour alpha: ", alpha_opt)
-
 # save in a csv file
-
 CSV.write(alpha_path, DataFrame(alpha_opt=alpha_opt))

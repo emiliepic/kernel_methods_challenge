@@ -4,7 +4,7 @@ import subprocess
 import json
 
 # Chemin vers le fichier Julia
-julia_script_path = "test_quad.jl"
+julia_script_path = "solve_quad.jl"
 
 
 class KernelSVC:
@@ -65,7 +65,6 @@ class KernelSVC:
                                    jac=lambda alpha: grad_loss(alpha), 
                                    constraints=constraints)
         self.alpha = optRes.x
-        print(self.alpha)
 
         ## Assign the required attributes
         support_indices = np.where(self.alpha > self.epsilon)[0]
@@ -81,7 +80,7 @@ class KernelSVC:
                              * self.support_labels * self.alpha_support_vectors)
 
     def fit_julia(self, X, y):
-       #### You might define here any variable needed for the rest of the code
+
         n = len(y)
         K = self.kernel(X, X)
         # save to json file
@@ -90,7 +89,6 @@ class KernelSVC:
         with open(json_path, "w") as f:
             json.dump(dict_params, f)
         alpha_path = "alpha.csv"
-        
         
 
         # Exécution du script Julia avec des arguments
@@ -112,14 +110,9 @@ class KernelSVC:
 
         # Load the alpha values without the header
         self.alpha = np.genfromtxt(alpha_path, delimiter=",", skip_header=1)
-
-        # self.alpha = np.array(alpha)
-
-        ## Assign the required attributes
-        support_indices = np.where(self.alpha > self.epsilon)[0]
-        self.support = X[support_indices]
-        self.support_labels = y[support_indices]
-        self.alpha_support_vectors = self.alpha[support_indices]
+        self.support = X
+        self.support_labels = y
+        self.alpha_support_vectors = self.alpha
         
         self.b = (np.sum(self.support_labels)
                   - np.sum(self.alpha_support_vectors * self.support_labels

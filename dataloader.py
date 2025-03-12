@@ -1,18 +1,7 @@
 import pandas as pd
 import numpy as np
+import os
 
-def load_data(k, type='train', encoding='mat100'):
-    file_Y = open(f'data/Ytr{k}.csv', 'rb')
-    
-    if type == 'train':
-        X_numpy = np.genfromtxt(f'data/Xtr{k}_{encoding}.csv', delimiter=' ')
-        Y_pd = pd.read_csv(file_Y)
-        Y_numpy = Y_pd['Bound'].to_numpy().ravel()
-        Y_numpy[Y_numpy == 0] = -1
-        return X_numpy, Y_numpy
-    else:
-        X_numpy = np.genfromtxt(f'data/Xte{k}_{encoding}.csv', delimiter=' ')
-        return X_numpy
 
 
 def encode_data(k, type='train',encoding="one_hot"):
@@ -51,7 +40,6 @@ def encode_sequence_one_hot(sequence):
     return encoding.flatten()
 
 def encode_sequence_int(sequence):
-    """ Encode a DNA sequence into a flatten matrix """
     encoding = np.zeros(len(sequence))
     for i, letter in enumerate(sequence):
         if letter == 'A':
@@ -67,7 +55,6 @@ def encode_sequence_int(sequence):
     return encoding
 
 def encode_sequence_bin(sequence):
-    """ Encode a DNA sequence into a flatten matrix """
     encoding = np.zeros((len(sequence),2))
     for i, letter in enumerate(sequence):
         if letter == 'A':
@@ -88,7 +75,6 @@ def encode_sequence_bin(sequence):
 
 
 def save_encoded_data():
-    # save to csv
     for k in range(3):
         for type in ['train', 'test']:
             for encoding in ['one_hot', 'int', 'bin']:
@@ -102,9 +88,21 @@ def save_encoded_data():
                 np.savetxt(path, X, delimiter=' ')
 
 
-# test_seq = "ACGTT"
-# print(encode_sequence_one_hot(test_seq))
-# print(encode_sequence_int(test_seq))
-# print(encode_sequence_bin(test_seq))
-
-# save_encoded_data()
+def load_data(k, type='train', encoding='mat100'):
+    file_Y = open(f'data/Ytr{k}.csv', 'rb')
+    
+    if type == 'train':
+        file_path = f'data/Xtr{k}_{encoding}.csv'
+        if not os.path.exists(file_path):
+            save_encoded_data()
+        X_numpy = np.genfromtxt(file_path, delimiter=' ')
+        Y_pd = pd.read_csv(file_Y)
+        Y_numpy = Y_pd['Bound'].to_numpy().ravel()
+        Y_numpy[Y_numpy == 0] = -1
+        return X_numpy, Y_numpy
+    else:
+        file_path = f'data/Xte{k}_{encoding}.csv'
+        if not os.path.exists(file_path):
+            save_encoded_data()
+        X_numpy = np.genfromtxt(file_path, delimiter=' ')
+        return X_numpy
